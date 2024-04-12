@@ -4,9 +4,13 @@
  * - Cada parte/trozo se llama slice 👍
  */
 
-import { configureStore, type Middleware } from "@reduxjs/toolkit"; // en store se guardara todo (estado, acciones, reducers)
+import {
+	UnknownAction,
+	configureStore,
+	type Middleware,
+} from "@reduxjs/toolkit"; // en store se guardara todo (estado, acciones, reducers)
 import { toast } from "sonner";
-import usersReducer, { UserWithId, rollbackUser } from "./users/slice";
+import usersReducer, { User, UserWithId, rollbackUser } from "./users/slice";
 
 /**
  * middleware ✅
@@ -22,15 +26,19 @@ const persistanceLocalStorageMiddleware: Middleware =
 		// podemos hacer cosas despues de cualquier accion
 		localStorage.setItem("__redux__state__", JSON.stringify(store.getState()));
 	};
+// type Action = {
+// 	type: string;
+// 	payload: string | Record<string, unknown>;
+// };
 
 const syncWithDatabase: Middleware = (store) => (next) => (action) => {
-	const { type, payload } = action;
-	const previousState = store.getState();
+	const { type, payload } = action as UnknownAction;
+	const previousState = store.getState() as RootState;
 
 	next(action);
 
 	if (type === "users/deleteUserById") {
-		const userIdToRemove = payload;
+		const userIdToRemove = payload as string;
 		const userToRemove = previousState.users.find(
 			(user: UserWithId) => user.id === userIdToRemove,
 		);
@@ -66,7 +74,9 @@ const syncWithDatabase: Middleware = (store) => (next) => (action) => {
 		})
 			.then((res) => {
 				if (res.ok)
-					toast.success(`Usuario ${payload.name} guardado correctamente`);
+					toast.success(
+						`Usuario ${(payload as User).name} guardado correctamente`,
+					);
 			})
 			.catch((err) => {
 				console.log("Error", err);
